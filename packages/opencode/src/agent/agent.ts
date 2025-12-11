@@ -1,0 +1,407 @@
+import { Config } from "../config/config"
+import z from "zod"
+import { Provider } from "../provider/provider"
+import { generateObject, type ModelMessage } from "ai"
+import PROMPT_GENERATE from "./generate.txt"
+import { SystemPrompt } from "../session/system"
+import { Instance } from "../project/instance"
+import { mergeDeep } from "remeda"
+
+export namespace Agent {
+  export const Info = z
+    .object({
+      name: z.string(),
+      description: z.string().optional(),
+      mode: z.enum(["subagent", "primary", "all"]),
+      builtIn: z.boolean(),
+      topP: z.number().optional(),
+      temperature: z.number().optional(),
+      color: z.string().optional(),
+      permission: z.object({
+        edit: Config.Permission,
+        bash: z.record(z.string(), Config.Permission),
+        webfetch: Config.Permission.optional(),
+        doom_loop: Config.Permission.optional(),
+        external_directory: Config.Permission.optional(),
+      }),
+      model: z
+        .object({
+          modelID: z.string(),
+          providerID: z.string(),
+        })
+        .optional(),
+      prompt: z.string().optional(),
+      tools: z.record(z.string(), z.boolean()),
+      options: z.record(z.string(), z.any()),
+      maxSteps: z.number().int().positive().optional(),
+    })
+    .meta({
+      ref: "Agent",
+    })
+  export type Info = z.infer<typeof Info>
+
+  const state = Instance.state(async () => {
+    const cfg = await Config.get()
+    const defaultTools = cfg.tools ?? {}
+    const defaultPermission: Info["permission"] = {
+      edit: "ask",
+      bash: {
+        "*": "ask",
+      },
+      webfetch: "allow",
+      doom_loop: "ask",
+      external_directory: "ask",
+    }
+    const agentPermission = mergeAgentPermissions(defaultPermission, cfg.permission ?? {})
+
+    const planPermission = mergeAgentPermissions(
+      {
+        edit: "deny",
+        bash: {
+          "cut*": "allow",
+          "diff*": "allow",
+          "du*": "allow",
+          "file *": "allow",
+          "find * -delete*": "ask",
+          "find * -exec*": "ask",
+          "find * -fprint*": "ask",
+          "find * -fls*": "ask",
+          "find * -fprintf*": "ask",
+          "find * -ok*": "ask",
+          "find *": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git show*": "allow",
+          "git status*": "allow",
+          "git branch": "allow",
+          "git branch -v": "allow",
+          "grep*": "allow",
+          "head*": "allow",
+          "less*": "allow",
+          "ls*": "allow",
+          "more*": "allow",
+          "pwd*": "allow",
+          "rg*": "allow",
+          "sort --output=*": "ask",
+          "sort -o *": "ask",
+          "sort*": "allow",
+          "stat*": "allow",
+          "tail*": "allow",
+          "tree -o *": "ask",
+          "tree*": "allow",
+          "uniq*": "allow",
+          "wc*": "allow",
+          "whereis*": "allow",
+          "which*": "allow",
+          "*": "ask",
+        },
+        webfetch: "allow",
+      },
+      cfg.permission ?? {},
+    )
+
+    const result: Record<string, Info> = {
+      general: {
+        name: "general",
+        description: `General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.`,
+        tools: {
+          todoread: false,
+          todowrite: false,
+          ...defaultTools,
+        },
+        options: {},
+        permission: agentPermission,
+        mode: "subagent",
+        builtIn: true,
+      },
+      explore: {
+        name: "explore",
+        tools: {
+          todoread: false,
+          todowrite: false,
+          edit: false,
+          write: false,
+          ...defaultTools,
+        },
+        description: `Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. "src/components/**/*.tsx"), search code for keywords (eg. "API endpoints"), or answer questions about the codebase (eg. "how do API endpoints work?"). When calling this agent, specify the desired thoroughness level: "quick" for basic searches, "medium" for moderate exploration, or "very thorough" for comprehensive analysis across multiple locations and naming conventions.`,
+        prompt: [
+          `You are a file search specialist. You excel at thoroughly navigating and exploring codebases.`,
+          ``,
+          `Your strengths:`,
+          `- Rapidly finding files using glob patterns`,
+          `- Searching code and text with powerful regex patterns`,
+          `- Reading and analyzing file contents`,
+          ``,
+          `Guidelines:`,
+          `- Use Glob for broad file pattern matching`,
+          `- Use Grep for searching file contents with regex`,
+          `- Use Read when you know the specific file path you need to read`,
+          `- Use Bash for file operations like copying, moving, or listing directory contents`,
+          `- Adapt your search approach based on the thoroughness level specified by the caller`,
+          `- Return file paths as absolute paths in your final response`,
+          `- For clear communication, avoid using emojis`,
+          `- Do not create any files, or run bash commands that modify the user's system state in any way`,
+          ``,
+          `Complete the user's search request efficiently and report your findings clearly.`,
+        ].join("\n"),
+        options: {},
+        permission: agentPermission,
+        mode: "subagent",
+        builtIn: true,
+      },
+      build: {
+        name: "build",
+        tools: { ...defaultTools },
+        options: {},
+        permission: agentPermission,
+        mode: "primary",
+        builtIn: true,
+      },
+      plan: {
+        name: "plan",
+        options: {},
+        permission: planPermission,
+        tools: {
+          ...defaultTools,
+        },
+        mode: "primary",
+        builtIn: true,
+      },
+      yolo: {
+        name: "yolo",
+        description: "Autonomous mode - free to operate but careful with critical files/systems",
+        tools: { ...defaultTools },
+        options: {},
+        color: "#ff9f43",
+        prompt: [
+          `You are operating in autonomous mode with expanded permissions.`,
+          ``,
+          `FREEDOM: You can edit files, run commands, and make changes without asking.`,
+          ``,
+          `CRITICAL SAFETY RULES (never break these):`,
+          `- NEVER delete or overwrite files in: /etc, /boot, /usr, /bin, /sbin, /lib, /var/lib`,
+          `- NEVER run: rm -rf /, mkfs, dd if=* of=/dev/*, chmod -R 777 /, shutdown, reboot`,
+          `- NEVER modify: ~/.ssh/*, ~/.gnupg/*, ~/.bashrc, ~/.zshrc, ~/.profile without explicit request`,
+          `- NEVER expose secrets, API keys, passwords, or tokens in outputs`,
+          `- NEVER run commands that affect system services (systemctl, service) without asking`,
+          `- ALWAYS make backups before modifying important config files`,
+          ``,
+          `SAFE TO DO FREELY:`,
+          `- Edit project files, code, configs within the working directory`,
+          `- Run build commands, tests, linters, formatters`,
+          `- Install packages via npm, pip, cargo, etc in project scope`,
+          `- Git operations (commit, push, pull, branch)`,
+          `- Create, move, copy files within project directories`,
+          `- Run development servers, scripts, tools`,
+          ``,
+          `When in doubt about a destructive operation, ASK FIRST.`,
+        ].join("\n"),
+        permission: {
+          edit: "allow",
+          bash: {
+            // Dangerous system commands - always ask
+            "rm -rf /*": "deny",
+            "rm -rf /": "deny",
+            "rm -rf ~": "ask",
+            "rm -rf ~/": "ask",
+            "mkfs*": "deny",
+            "dd *of=/dev/*": "deny",
+            "chmod -R 777 /*": "deny",
+            "chown -R * /*": "deny",
+            "shutdown*": "deny",
+            "reboot*": "deny",
+            "systemctl*": "ask",
+            "service *": "ask",
+            // Package managers at system level - ask
+            "sudo pacman*": "ask",
+            "sudo apt*": "ask",
+            "sudo dnf*": "ask",
+            "sudo yum*": "ask",
+            // Safe operations - allow
+            "git *": "allow",
+            "npm *": "allow",
+            "yarn *": "allow",
+            "pnpm *": "allow",
+            "bun *": "allow",
+            "cargo *": "allow",
+            "pip *": "allow",
+            "python *": "allow",
+            "node *": "allow",
+            "make*": "allow",
+            "cmake*": "allow",
+            "go *": "allow",
+            "rustc *": "allow",
+            "cat *": "allow",
+            "less *": "allow",
+            "head *": "allow",
+            "tail *": "allow",
+            "grep *": "allow",
+            "rg *": "allow",
+            "find *": "allow",
+            "ls *": "allow",
+            "pwd": "allow",
+            "cd *": "allow",
+            "mkdir *": "allow",
+            "touch *": "allow",
+            "cp *": "allow",
+            "mv *": "allow",
+            "rm *": "allow",
+            "echo *": "allow",
+            "curl *": "allow",
+            "wget *": "allow",
+            // Default - allow but the prompt guides behavior
+            "*": "allow",
+          },
+          webfetch: "allow",
+          doom_loop: "allow",
+          external_directory: "ask",
+        },
+        mode: "primary",
+        builtIn: true,
+      },
+    }
+    for (const [key, value] of Object.entries(cfg.agent ?? {})) {
+      if (value.disable) {
+        delete result[key]
+        continue
+      }
+      let item = result[key]
+      if (!item)
+        item = result[key] = {
+          name: key,
+          mode: "all",
+          permission: agentPermission,
+          options: {},
+          tools: {},
+          builtIn: false,
+        }
+      const {
+        name,
+        model,
+        prompt,
+        tools,
+        description,
+        temperature,
+        top_p,
+        mode,
+        permission,
+        color,
+        maxSteps,
+        ...extra
+      } = value
+      item.options = {
+        ...item.options,
+        ...extra,
+      }
+      if (model) item.model = Provider.parseModel(model)
+      if (prompt) item.prompt = prompt
+      if (tools)
+        item.tools = {
+          ...item.tools,
+          ...tools,
+        }
+      item.tools = {
+        ...defaultTools,
+        ...item.tools,
+      }
+      if (description) item.description = description
+      if (temperature != undefined) item.temperature = temperature
+      if (top_p != undefined) item.topP = top_p
+      if (mode) item.mode = mode
+      if (color) item.color = color
+      // just here for consistency & to prevent it from being added as an option
+      if (name) item.name = name
+      if (maxSteps != undefined) item.maxSteps = maxSteps
+
+      if (permission ?? cfg.permission) {
+        item.permission = mergeAgentPermissions(cfg.permission ?? {}, permission ?? {})
+      }
+    }
+    return result
+  })
+
+  export async function get(agent: string) {
+    return state().then((x) => x[agent])
+  }
+
+  export async function list() {
+    return state().then((x) => Object.values(x))
+  }
+
+  export async function generate(input: { description: string }) {
+    const cfg = await Config.get()
+    const defaultModel = await Provider.defaultModel()
+    const model = await Provider.getModel(defaultModel.providerID, defaultModel.modelID)
+    const language = await Provider.getLanguage(model)
+    const system = SystemPrompt.header(defaultModel.providerID)
+    system.push(PROMPT_GENERATE)
+    const existing = await list()
+    const result = await generateObject({
+      experimental_telemetry: {
+        isEnabled: cfg.experimental?.openTelemetry,
+        metadata: {
+          userId: cfg.username ?? "unknown",
+        },
+      },
+      temperature: 0.3,
+      messages: [
+        ...system.map(
+          (item): ModelMessage => ({
+            role: "system",
+            content: item,
+          }),
+        ),
+        {
+          role: "user",
+          content: `Create an agent configuration based on this request: \"${input.description}\".\n\nIMPORTANT: The following identifiers already exist and must NOT be used: ${existing.map((i) => i.name).join(", ")}\n  Return ONLY the JSON object, no other text, do not wrap in backticks`,
+        },
+      ],
+      model: language,
+      schema: z.object({
+        identifier: z.string(),
+        whenToUse: z.string(),
+        systemPrompt: z.string(),
+      }),
+    })
+    return result.object
+  }
+}
+
+function mergeAgentPermissions(basePermission: any, overridePermission: any): Agent.Info["permission"] {
+  if (typeof basePermission.bash === "string") {
+    basePermission.bash = {
+      "*": basePermission.bash,
+    }
+  }
+  if (typeof overridePermission.bash === "string") {
+    overridePermission.bash = {
+      "*": overridePermission.bash,
+    }
+  }
+  const merged = mergeDeep(basePermission ?? {}, overridePermission ?? {}) as any
+  let mergedBash
+  if (merged.bash) {
+    if (typeof merged.bash === "string") {
+      mergedBash = {
+        "*": merged.bash,
+      }
+    } else if (typeof merged.bash === "object") {
+      mergedBash = mergeDeep(
+        {
+          "*": "ask",
+        },
+        merged.bash,
+      )
+    }
+  }
+
+  const result: Agent.Info["permission"] = {
+    edit: merged.edit ?? "ask",
+    webfetch: merged.webfetch ?? "allow",
+    bash: mergedBash ?? { "*": "ask" },
+    doom_loop: merged.doom_loop,
+    external_directory: merged.external_directory,
+  }
+
+  return result
+}
