@@ -64,6 +64,9 @@ import { Editor } from "../../util/editor"
 import stripAnsi from "strip-ansi"
 import { Footer } from "./footer.tsx"
 import { usePromptRef } from "../../context/prompt"
+import { SubagentPanel, createSubagentPanelState } from "../../component/subagent-panel"
+import { SessionTabs, createSplitPanelState } from "../../component/session-tabs"
+import { SessionPanel } from "../../component/session-panel"
 
 addDefaultParsers(parsers.parsers)
 
@@ -122,10 +125,58 @@ export function Session() {
   const [showDetails, setShowDetails] = createSignal(kv.get("tool_details_visibility", true))
   const [showScrollbar, setShowScrollbar] = createSignal(kv.get("scrollbar_visible", false))
   const [diffWrapMode, setDiffWrapMode] = createSignal<"word" | "none">("word")
+  const [subagentPanelVisible, setSubagentPanelVisible] = createSignal(kv.get("subagent_panel_visible", true))
+  
+  // Subagent panel state for tab management
+  const subagentPanelState = createSubagentPanelState()
+  
+  // Split panel state for side-by-side subagent viewing
+  const splitPanelState = createSplitPanelState()
+  
+  // Track which session panel is focused (for split view input)
+  const [focusedSessionID, setFocusedSessionID] = createSignal(route.sessionID)
+  
+  // Update focused session when route changes
+  createEffect(() => {
+    setFocusedSessionID(route.sessionID)
+  })
+  
+  // Check if we have any splits open
+  const hasSplits = createMemo(() => splitPanelState.splitSessionIDs().size > 0)
+  
+  // Check if current session has active subagents
+  const hasSubagents = createMemo(() => {
+    // Only show panel for parent sessions (not when viewing a subagent session)
+    if (session()?.parentID) return false
+    return sync.data.session.some(s => s.parentID === route.sessionID)
+  })
+  
+  // Count subagents for tab navigation
+  const subagentCount = createMemo(() => {
+    return sync.data.session.filter(s => s.parentID === route.sessionID).length
+  })
+  
+  // Get the list of child sessions (subagents) sorted by creation time
+  const childSessions = createMemo(() => {
+    return sync.data.session
+      .filter(s => s.parentID === route.sessionID)
+      .sort((a, b) => a.time.created - b.time.created)
+  })
+  
+  // Get the active subagent session ID based on panel tab selection
+  const activeSubagentSessionID = createMemo(() => {
+    if (!hasSubagents() || !subagentPanelVisible()) return undefined
+    const children = childSessions()
+    const activeIndex = subagentPanelState.activeTabIndex()
+    if (activeIndex >= 0 && activeIndex < children.length) {
+      return children[activeIndex].id
+    }
+    return children[0]?.id
+  })
 
   const wide = createMemo(() => dimensions().width > 120)
   const sidebarVisible = createMemo(() => {
-    if (session()?.parentID) return false
+    // Show sidebar for both parent and subagent sessions
     if (sidebar() === "show") return true
     if (sidebar() === "auto" && wide()) return true
     return false
@@ -490,6 +541,21 @@ export function Session() {
       },
     },
     {
+      title: subagentPanelVisible() ? "Hide subagent panel" : "Show subagent panel",
+      value: "session.toggle.subagent_panel",
+      keybind: "subagent_panel_toggle" as any,
+      category: "Monitor",
+      suggested: hasSubagents(),
+      onSelect: (dialog) => {
+        setSubagentPanelVisible((prev) => {
+          const next = !prev
+          kv.set("subagent_panel_visible", next)
+          return next
+        })
+        dialog.clear()
+      },
+    },
+    {
       title: "Page up",
       value: "session.page.up",
       keybind: "messages_page_up",
@@ -757,6 +823,121 @@ export function Session() {
         dialog.clear()
       },
     },
+    {
+      title: "Next subagent tab",
+      value: "subagent.tab.next",
+      keybind: "subagent_panel_next" as any,
+      category: "Monitor",
+      disabled: true,
+      onSelect: (dialog) => {
+        subagentPanelState.nextTab(subagentCount())
+        dialog.clear()
+      },
+    },
+    {
+      title: "Previous subagent tab",
+      value: "subagent.tab.prev",
+      keybind: "subagent_panel_prev" as any,
+      category: "Monitor",
+      disabled: true,
+      onSelect: (dialog) => {
+        subagentPanelState.prevTab(subagentCount())
+        dialog.clear()
+      },
+    },
+    {
+      title: "Minimize/expand subagent panel",
+      value: "subagent.panel.minimize",
+      category: "Monitor",
+      onSelect: (dialog) => {
+        subagentPanelState.toggle()
+        dialog.clear()
+      },
+    },
+    {
+      title: "Focus next split panel",
+      value: "split.focus.next",
+      keybind: "split_focus_next" as any,
+      category: "Split View",
+      suggested: hasSplits(),
+      disabled: true,
+      onSelect: (dialog) => {
+        // Cycle through: main -> split1 -> split2 -> ... -> main
+        const splits = Array.from(splitPanelState.splitSessionIDs())
+        if (splits.length === 0) return
+        
+        const currentFocused = focusedSessionID()
+        const mainID = route.sessionID
+        
+        if (currentFocused === mainID) {
+          // Move to first split
+          setFocusedSessionID(splits[0])
+        } else {
+          const idx = splits.indexOf(currentFocused)
+          if (idx === splits.length - 1) {
+            // Move back to main
+            setFocusedSessionID(mainID)
+          } else {
+            // Move to next split
+            setFocusedSessionID(splits[idx + 1])
+          }
+        }
+        dialog.clear()
+      },
+    },
+    {
+      title: "Focus previous split panel",
+      value: "split.focus.prev",
+      keybind: "split_focus_prev" as any,
+      category: "Split View",
+      suggested: hasSplits(),
+      disabled: true,
+      onSelect: (dialog) => {
+        // Cycle through: main <- split1 <- split2 <- ... <- main
+        const splits = Array.from(splitPanelState.splitSessionIDs())
+        if (splits.length === 0) return
+        
+        const currentFocused = focusedSessionID()
+        const mainID = route.sessionID
+        
+        if (currentFocused === mainID) {
+          // Move to last split
+          setFocusedSessionID(splits[splits.length - 1])
+        } else {
+          const idx = splits.indexOf(currentFocused)
+          if (idx === 0) {
+            // Move back to main
+            setFocusedSessionID(mainID)
+          } else {
+            // Move to previous split
+            setFocusedSessionID(splits[idx - 1])
+          }
+        }
+        dialog.clear()
+      },
+    },
+    {
+      title: "Focus main panel",
+      value: "split.focus.main",
+      keybind: "split_focus_main" as any,
+      category: "Split View",
+      suggested: hasSplits() && focusedSessionID() !== route.sessionID,
+      onSelect: (dialog) => {
+        setFocusedSessionID(route.sessionID)
+        dialog.clear()
+      },
+    },
+    {
+      title: "Close all splits",
+      value: "split.close.all",
+      category: "Split View",
+      suggested: hasSplits(),
+      onSelect: (dialog) => {
+        splitPanelState.clearSplits()
+        setFocusedSessionID(route.sessionID)
+        dialog.clear()
+      },
+    },
   ])
 
   const revertInfo = createMemo(() => session()?.revert)
@@ -830,9 +1011,28 @@ export function Session() {
       <box flexDirection="row">
         <box flexGrow={1} paddingBottom={1} paddingTop={1} paddingLeft={2} paddingRight={2} gap={1}>
           <Show when={session()}>
-            <Show when={!sidebarVisible()}>
+            {/* Session Tabs - shows for parent and subagent sessions */}
+            <SessionTabs 
+              currentSessionID={route.sessionID}
+              onNavigateToSession={(sessionID) => navigate({ type: "session", sessionID })}
+              splitSessionIDs={splitPanelState.splitSessionIDs}
+              onSplitOpen={(sessionID) => splitPanelState.addSplit(sessionID)}
+              onSplitClose={(sessionID) => splitPanelState.removeSplit(sessionID)}
+              onCloseSession={(sessionID) => {
+                // Remove from splits if present
+                splitPanelState.removeSplit(sessionID)
+                // TODO: Actually close/abort the session via SDK
+                toast.show({ message: `Session closed`, variant: "success" })
+              }}
+            />
+            <Show when={!sidebarVisible() && !hasSplits()}>
               <Header />
             </Show>
+            
+            {/* Main content area - either single view or split view */}
+            <box flexDirection="row" flexGrow={1}>
+              {/* Primary session panel */}
+              <box flexDirection="column" flexGrow={1}>
             <scrollbox
               ref={(r) => (scroll = r)}
               verticalScrollbarOptions={{
@@ -944,6 +1144,19 @@ export function Session() {
                 )}
               </For>
             </scrollbox>
+            {/* Subagent Panel - shows when parent session has active subagents */}
+            <Show when={hasSubagents() && subagentPanelVisible()}>
+              <SubagentPanel 
+                parentSessionID={route.sessionID}
+                onNavigateToSession={(sessionID) => {
+                  navigate({ type: "session", sessionID })
+                }}
+                minimized={subagentPanelState.minimized}
+                setMinimized={subagentPanelState.setMinimized}
+                activeTabIndex={subagentPanelState.activeTabIndex}
+                setActiveTabIndex={subagentPanelState.setActiveTabIndex}
+              />
+            </Show>
             <box flexShrink={0}>
               <Prompt
                 ref={(r) => {
@@ -957,14 +1170,40 @@ export function Session() {
                 sessionID={route.sessionID}
               />
             </box>
-            <Show when={!sidebarVisible()}>
+            <Show when={!sidebarVisible() && !hasSplits()}>
               <Footer />
             </Show>
+              </box>
+              
+              {/* Split panels - shown when user opens splits via ▶ button */}
+              <Show when={hasSplits()}>
+                <For each={Array.from(splitPanelState.splitSessionIDs())}>
+                  {(splitSessionID) => (
+                    <SessionPanel
+                      sessionID={splitSessionID}
+                      isFocused={focusedSessionID() === splitSessionID}
+                      onFocus={() => setFocusedSessionID(splitSessionID)}
+                      compact={true}
+                      conceal={conceal}
+                      showThinking={showThinking}
+                      showTimestamps={showTimestamps}
+                      usernameVisible={usernameVisible}
+                      showDetails={showDetails}
+                      showScrollbar={showScrollbar}
+                      diffWrapMode={diffWrapMode}
+                    />
+                  )}
+                </For>
+              </Show>
+            </box>
           </Show>
           <Toast />
         </box>
         <Show when={sidebarVisible()}>
-          <Sidebar sessionID={route.sessionID} />
+          <Sidebar 
+            sessionID={hasSplits() ? focusedSessionID() : route.sessionID} 
+            activeSubagentSessionID={hasSplits() ? undefined : activeSubagentSessionID()}
+          />
         </Show>
       </box>
     </context.Provider>

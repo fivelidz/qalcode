@@ -666,6 +666,104 @@ const ANIME_MONITORING = [
    \_/\_/  OK!  `,
 ]
 
+// YOLO STATE - Chaotic, fast, slightly unhinged
+const ANIME_YOLO = [
+  `    ∧＿∧  ⚡⚡  
+   (☉ω☉)ノ⌨ YOLO
+   |つ ≡≡≡≡    
+   |　 | SEND IT
+   \_/\_/  !!   `,
+  `   ∧＿∧ ⚡⚡⚡ 
+   (◎ω◎)ノ⌨YOLO
+    |つ≡≡≡≡≡   
+    |　|SEND IT!
+   \_/\_/ !!!  `,
+  `    ∧＿∧⚡⚡⚡⚡
+   (✧ω✧)っ⌨YOLO
+   |つ ≡≡≡≡    
+   |　 |NO FEAR
+   \_/\_/ !!!!`,
+  `  ∧＿∧  💨💨 
+   (>ω<)ノ⌨ YOLO
+    |つ≡≡≡≡≡≡  
+    |　| FAST! 
+   \_/\_/⚡⚡⚡ `,
+  `    ∧＿∧ 🔥🔥 
+   (☆ω☆)っ⌨YOLO
+   |つ ≡≡≡≡    
+   |　 |TRUST ME
+   \_/\_/ 💨💨`,
+  `   ∧＿∧🔥🔥🔥
+   (◉ω◉)ノ⌨YOLO
+    |つ≡≡≡≡≡   
+    |　| WCGW? 
+   \_/\_/  ⚡  `,
+  `    ∧＿∧ ⚡🔥 
+   (≧ω≦)っ⌨YOLO
+   |つ ≡≡≡≡    
+   |　 |LGTM!!
+   \_/\_/ 🚀🚀`,
+  `  ∧＿∧  🚀🚀 
+   (*>ω<)ノ⌨YOLO
+    |つ≡≡≡≡≡   
+    |　|SHIP IT
+   \_/\_/💨💨💨`,
+]
+
+// YOLO EXTREME STATE - Absolutely unhinged, chaotic energy
+const ANIME_YOLO_EXTREME = [
+  `    ∧＿∧ 💀🔥💀
+   (◣Д◢)ノ⌨    
+   |つ    EXTREME
+   |　 | !!YOLO!!
+   \_/\_/ 🔥🔥🔥`,
+  `  ∧＿∧💀💀💀💀
+   (⊙△⊙)ノ⌨    
+    |つ   EXTREME
+    |　|HOLD BEER
+   \_/\_/☠️☠️☠️`,
+  `    ∧＿∧ ☠️🔥☠️
+   (◎Д◎)っ⌨    
+   |つ    EXTREME
+   |　 |NOBACKUP
+   \_/\_/💣💣💣`,
+  `  ∧＿∧💥💥💥💥
+   (╬ಠ益ಠ)⌨    
+    |つ   EXTREME
+    |　| ROOTPLS
+   \_/\_/ ☠️☠️`,
+  `    ∧＿∧☠️💥☠️
+   (◣_◢)ノ⌨    
+   |つ    EXTREME
+   |　 |YEETSYS
+   \_/\_/💀💀💀`,
+  `  ∧＿∧ 🔥💀🔥
+   (ↀДↀ)っ⌨    
+    |つ   EXTREME
+    |　|RMRF OK?
+   \_/\_/💣💣💣`,
+  `    ∧＿∧💣💣💣
+   (☣Д☣)ノ⌨    
+   |つ    EXTREME
+   |　 | SUDO!!
+   \_/\_/☠️💥☠️`,
+  `  ∧＿∧ ☢️☢️☢️
+   (◎ロ◎)っ⌨    
+    |つ   EXTREME
+    |　|FULL SEND
+   \_/\_/🔥🔥🔥`,
+  `    ∧＿∧💀☢️💀
+   (✖Д✖)ノ⌨    
+   |つ    EXTREME
+   |　 |CHAOS!!!
+   \_/\_/💥💥💥`,
+  `  ∧＿∧ 💥☣️💥
+   (ↂ_ↂ)っ⌨    
+    |つ   EXTREME
+    |　|PROD?LOL
+   \_/\_/☠️☠️☠️`,
+]
+
 // Simple one-liner fallbacks for compact display
 const SIMPLE_IDLE = [
   "✧(◠‿◠)✧  Ready~",
@@ -688,8 +786,22 @@ const SIMPLE_WORKING = [
   "(>.<｡)✨ working!",
 ]
 
+const SIMPLE_YOLO = [
+  "(☉ω☉)⚡ YOLO!!",
+  "(◎ω◎)🔥 SEND IT!",
+  "(✧ω✧)💨 NO FEAR!",
+  "(≧ω≦)🚀 SHIP IT!",
+]
+
+const SIMPLE_YOLO_EXTREME = [
+  "(◣Д◢)💀 EXTREME!!",
+  "(⊙△⊙)☠️ HOLD BEER!",
+  "(╬ಠ益ಠ)🔥 YEET!!!",
+  "(☣Д☣)💥 CHAOS!!!",
+]
+
 // Animation state types
-type AnimationState = "idle" | "thinking" | "working" | "searching" | "success" | "error" | "waiting" | "installing" | "writing" | "deploying" | "security" | "database" | "api" | "testing" | "monitoring"
+type AnimationState = "idle" | "thinking" | "working" | "searching" | "success" | "error" | "waiting" | "installing" | "writing" | "deploying" | "security" | "database" | "api" | "testing" | "monitoring" | "yolo" | "yolo_extreme"
 
 // Map states to their full animations
 const FULL_ANIMATIONS: Record<AnimationState, string[]> = {
@@ -708,6 +820,8 @@ const FULL_ANIMATIONS: Record<AnimationState, string[]> = {
   api: ANIME_API,
   testing: ANIME_TESTING,
   monitoring: ANIME_MONITORING,
+  yolo: ANIME_YOLO,
+  yolo_extreme: ANIME_YOLO_EXTREME,
 }
 
 // Simple one-liner animations for status bar
@@ -715,6 +829,8 @@ const SIMPLE_ANIMATIONS: Record<string, string[]> = {
   idle: SIMPLE_IDLE,
   thinking: SIMPLE_THINKING,
   working: SIMPLE_WORKING,
+  yolo: SIMPLE_YOLO,
+  yolo_extreme: SIMPLE_YOLO_EXTREME,
 }
 
 // Map agent names to animation states
@@ -729,6 +845,12 @@ const AGENT_TO_STATE: Record<string, AnimationState> = {
   "fivelidz-api-specialist": "api",
   "fivelidz-qa-tester": "testing",
   "fivelidz-devops-monitor": "monitoring",
+  // YOLO modes - chaotic energy
+  "yolo": "yolo",
+  "yolo-mode": "yolo",
+  "yolo-extreme": "yolo_extreme",
+  "extreme": "yolo_extreme",
+  "chaos": "yolo_extreme",
 }
 
 // Legacy simple format for backwards compatibility
@@ -745,15 +867,72 @@ const PROCESSING_FRAMES = [
   "[□□□□■] processing",
 ]
 
-export function Sidebar(props: { sessionID: string }) {
+export function Sidebar(props: { 
+  sessionID: string
+  activeSubagentSessionID?: string  // Optional: show this subagent's data instead (for parent view)
+}) {
   const sync = useSync()
   const { theme } = useTheme()
   const route = useRoute()
+  
+  // Check if the main sessionID is itself a subagent (has a parent)
+  const mainSession = createMemo(() => sync.session.get(props.sessionID))
+  const isDirectSubagentView = createMemo(() => !!mainSession()?.parentID)
+  
+  // Determine which session to display:
+  // 1. If activeSubagentSessionID is passed (from parent view's panel), use that
+  // 2. If we're directly viewing a subagent, use the sessionID
+  // 3. Otherwise use the main sessionID
+  const displaySessionID = createMemo(() => {
+    if (props.activeSubagentSessionID) return props.activeSubagentSessionID
+    return props.sessionID
+  })
+  
+  const isShowingSubagent = createMemo(() => {
+    return !!props.activeSubagentSessionID || isDirectSubagentView()
+  })
+  
+  // Get subagent info - works for both panel selection and direct view
+  const subagentInfo = createMemo(() => {
+    const subSessionID = props.activeSubagentSessionID || (isDirectSubagentView() ? props.sessionID : null)
+    if (!subSessionID) return null
+    
+    const subSession = sync.session.get(subSessionID)
+    if (!subSession) return null
+    
+    // Extract agent type and short name from title
+    const title = subSession.title || "Subagent"
+    const agentTypeMatch = title.match(/@([a-z-]+)\s+subagent/i)
+    const agentType = agentTypeMatch ? agentTypeMatch[1] : "subagent"
+    const shortName = title.replace(/\s*\(@[a-z-]+\s+subagent\)\s*$/i, "").trim() || "task"
+    
+    // Find task number (position among siblings)
+    const parentID = subSession.parentID
+    const siblings = parentID 
+      ? sync.data.session.filter(s => s.parentID === parentID).sort((a, b) => a.time.created - b.time.created)
+      : []
+    const taskNumber = siblings.findIndex(s => s.id === subSession.id) + 1
+    
+    return { agentType, shortName, taskNumber, title }
+  })
+  
+  // Get parent session (for display when viewing subagent)
+  const parentSession = createMemo(() => {
+    if (isDirectSubagentView()) {
+      return sync.session.get(mainSession()!.parentID!)
+    }
+    if (props.activeSubagentSessionID) {
+      return mainSession()
+    }
+    return null
+  })
+  
   const session = createMemo(() => sync.session.get(props.sessionID)!)
-  const diff = createMemo(() => sync.data.session_diff[props.sessionID] ?? [])
-  const todo = createMemo(() => sync.data.todo[props.sessionID] ?? [])
-  const messages = createMemo(() => sync.data.message[props.sessionID] ?? [])
-  const status = createMemo(() => sync.data.session_status[props.sessionID] ?? { type: "idle" })
+  const displaySession = createMemo(() => sync.session.get(displaySessionID())!)
+  const diff = createMemo(() => sync.data.session_diff[displaySessionID()] ?? [])
+  const todo = createMemo(() => sync.data.todo[displaySessionID()] ?? [])
+  const messages = createMemo(() => sync.data.message[displaySessionID()] ?? [])
+  const status = createMemo(() => sync.data.session_status[displaySessionID()] ?? { type: "idle" })
   
   // Get session branches/forks - find siblings (same parent) and children
   const sessionFamily = createMemo(() => {
@@ -798,6 +977,13 @@ export function Sidebar(props: { sessionID: string }) {
     const st = status()
     if (st.type === "idle") return "idle"
     if (st.type === "retry") return "waiting"
+    
+    // When showing a subagent, use agent-specific animation
+    if (isShowingSubagent() && subagentInfo()) {
+      const agentType = subagentInfo()!.agentType
+      return AGENT_TO_STATE[agentType] || "working"
+    }
+    
     // When busy, could be working, but we can infer more from last tool
     return "working"
   })
@@ -959,6 +1145,29 @@ export function Sidebar(props: { sessionID: string }) {
               <text fg={theme.textMuted}>{currentModel()}</text>
             </box>
 
+            {/* Active Subagent Banner - shown when viewing a subagent */}
+            <Show when={isShowingSubagent() && subagentInfo()}>
+              <box 
+                backgroundColor={theme.backgroundElement}
+                paddingLeft={1}
+                paddingRight={1}
+                paddingTop={1}
+                paddingBottom={1}
+                border={["left"]}
+                borderColor={theme.accent}
+              >
+                <text fg={theme.accent}>
+                  <b>#{subagentInfo()!.taskNumber} @{subagentInfo()!.agentType}</b>
+                </text>
+                <text fg={theme.text}>
+                  <b>{subagentInfo()!.shortName}</b>
+                </text>
+                <text fg={theme.textMuted}>
+                  {status().type === "busy" ? "Working..." : status().type === "retry" ? "Retrying..." : "Completed"}
+                </text>
+              </box>
+            </Show>
+
             {/* Directory & Git Section */}
             <box>
               <text fg={theme.text}>
@@ -972,15 +1181,24 @@ export function Sidebar(props: { sessionID: string }) {
               </Show>
             </box>
 
+            {/* Session title - show parent session when viewing subagent */}
             <box>
-              <text fg={theme.text}>
-                <b>{session().title}</b>
-              </text>
-              <text fg={theme.textMuted}>
-                {Locale.todayTimeOrDateTime(session().time.created)}
-              </text>
-              <Show when={session().share?.url}>
-                <text fg={theme.textMuted}>{session().share!.url}</text>
+              <Show when={isShowingSubagent() && parentSession()} fallback={
+                <>
+                  <text fg={theme.text}>
+                    <b>{session()?.title}</b>
+                  </text>
+                  <text fg={theme.textMuted}>
+                    {session() ? Locale.todayTimeOrDateTime(session().time.created) : ""}
+                  </text>
+                  <Show when={session()?.share?.url}>
+                    <text fg={theme.textMuted}>{session().share!.url}</text>
+                  </Show>
+                </>
+              }>
+                <text fg={theme.textMuted}>
+                  <span style={{ fg: theme.primary }}>◆</span> Parent: {parentSession()?.title}
+                </text>
               </Show>
             </box>
             <box>
@@ -1303,7 +1521,7 @@ export function Sidebar(props: { sessionID: string }) {
                 <text>
                   <b>Getting started</b>
                 </text>
-                <text fg={theme.textMuted}>OpenCode includes free models so you can start immediately.</text>
+                <text fg={theme.textMuted}>Qalarc includes free models so you can start immediately.</text>
                 <text fg={theme.textMuted}>
                   Connect from 75+ providers to use other models, including Claude, GPT, Gemini etc
                 </text>
@@ -1316,9 +1534,9 @@ export function Sidebar(props: { sessionID: string }) {
           </Show>
           <text fg={theme.text}>{directory()}</text>
           <text fg={theme.textMuted}>
-            <span style={{ fg: theme.success }}>•</span> <b>Open</b>
-            <span style={{ fg: theme.text }}>
-              <b>Code</b>
+            <span style={{ fg: theme.success }}>•</span> <b>Qal</b>
+            <span style={{ fg: theme.accent }}>
+              <b>arc</b>
             </span>{" "}
             <span>{Installation.VERSION}</span>
           </text>

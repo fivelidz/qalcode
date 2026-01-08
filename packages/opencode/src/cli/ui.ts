@@ -3,11 +3,12 @@ import { EOL } from "os"
 import { NamedError } from "@opencode-ai/util/error"
 
 export namespace UI {
+  // QALARC logo - "Qal" in gray, "arc" in highlight
   const LOGO = [
-    [`                    `, `             ▄     `],
-    [`█▀▀█ █▀▀█ █▀▀█ █▀▀▄ `, `█▀▀▀ █▀▀█ █▀▀█ █▀▀█`],
-    [`█░░█ █░░█ █▀▀▀ █░░█ `, `█░░░ █░░█ █░░█ █▀▀▀`],
-    [`▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀  ▀ `, `▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀`],
+    [`                 `, `              `],
+    [`█▀▀█ █▀▀█ █░░  `, `█▀▀█ █▀▀█ █▀▀█`],
+    [`█░░█ █▀▀█ █░░  `, `█▀▀█ █▀▀▄ █░░░`],
+    [`▀▀▀█ ▀░░▀ ▀▀▀  `, `▀░░▀ ▀░░▀ ▀▀▀▀`],
   ]
 
   export const CancelledError = NamedError.create("UICancelledError", z.void())

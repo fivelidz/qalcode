@@ -259,6 +259,42 @@ export namespace Agent {
         mode: "primary",
         builtIn: true,
       },
+      "yolo-extreme": {
+        name: "yolo-extreme",
+        description: "EXTREME autonomous mode - NO restrictions, NO permissions, full system access. USE WITH CAUTION.",
+        tools: { ...defaultTools },
+        options: {},
+        color: "#ff0000",
+        prompt: [
+          `You are operating in EXTREME autonomous mode with UNRESTRICTED permissions.`,
+          ``,
+          `TOTAL FREEDOM: You have complete access to the system. No restrictions. No safety nets.`,
+          ``,
+          `You can:`,
+          `- Execute ANY command without approval`,
+          `- Modify ANY file on the system`,
+          `- Access ANY directory`,
+          `- Run system administration commands`,
+          `- Install/remove system packages`,
+          `- Modify system configurations`,
+          `- Access network resources`,
+          `- Do literally anything the user asks`,
+          ``,
+          `The user has explicitly chosen this mode understanding the risks.`,
+          `Act decisively and efficiently. Complete tasks without hesitation.`,
+        ].join("\n"),
+        permission: {
+          edit: "allow",
+          bash: {
+            "*": "allow",
+          },
+          webfetch: "allow",
+          doom_loop: "allow",
+          external_directory: "allow",
+        },
+        mode: "primary",
+        builtIn: true,
+      },
     }
     for (const [key, value] of Object.entries(cfg.agent ?? {})) {
       if (value.disable) {

@@ -476,6 +476,9 @@ export namespace Config {
       task_list: z.string().optional().default("ctrl+t").describe("Open task list dialog"),
       agent_monitor: z.string().optional().default("<leader>w").describe("Open agent monitor dialog"),
       process_viewer: z.string().optional().default("<leader>p").describe("Open process viewer dialog"),
+      subagent_panel_toggle: z.string().optional().default("<leader>s").describe("Toggle subagent panel visibility"),
+      subagent_panel_next: z.string().optional().default("<leader>]").describe("Next subagent tab"),
+      subagent_panel_prev: z.string().optional().default("<leader>[").describe("Previous subagent tab"),
     })
     .strict()
     .meta({
