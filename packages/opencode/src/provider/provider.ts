@@ -544,6 +544,8 @@ export namespace Provider {
         models: mapValues(anthropic.models, (model) => ({
           ...model,
           providerID: "claude-code",
+          // Override api to use claude-code provider, not anthropic
+          api: { id: model.api?.id || model.id, url: "", npm: "claude-code" },
         })),
       }
     }

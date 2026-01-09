@@ -301,9 +301,14 @@ export namespace Agent {
         tools: { ...defaultTools },
         options: {},
         color: "#7B68EE",
+        model: {
+          providerID: "anthropic",
+          modelID: "claude-opus-4-5",
+        },
         prompt: [
           `You are Claude Code, Anthropic's official CLI for Claude.`,
           `You are an interactive CLI tool that helps users with software engineering tasks.`,
+          `You are powered by Claude Opus 4.5, Anthropic's most capable model.`,
         ].join("\n"),
         permission: {
           edit: "allow",
@@ -327,6 +332,10 @@ export namespace Agent {
         },
         options: {},
         color: "#4169E1",
+        model: {
+          providerID: "anthropic",
+          modelID: "claude-opus-4-5",
+        },
         prompt: [
           `You are a research and analysis assistant focused on understanding and explaining code.`,
           `You can read files and search for information, but cannot modify anything.`,
@@ -355,6 +364,10 @@ export namespace Agent {
         },
         options: {},
         color: "#FF6347",
+        model: {
+          providerID: "anthropic",
+          modelID: "claude-opus-4-5",
+        },
         prompt: [
           `You are a system architect focused on design and planning.`,
           `You can create documentation, diagrams (as code), and architecture files.`,
@@ -378,6 +391,10 @@ export namespace Agent {
         tools: { ...defaultTools },
         options: {},
         color: "#DC143C",
+        model: {
+          providerID: "anthropic",
+          modelID: "claude-opus-4-5",
+        },
         prompt: [
           `You are a debugging specialist focused on finding and fixing bugs.`,
           `You excel at reading logs, analyzing error messages, and tracing issues.`,
