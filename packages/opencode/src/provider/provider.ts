@@ -25,6 +25,7 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 import { createOpenRouter, type LanguageModelV2 } from "@openrouter/ai-sdk-provider"
 import { createOpenaiCompatible as createGitHubCopilotOpenAICompatible } from "./sdk/openai-compatible/src"
+import { createClaudeCodeProvider } from "./claude-code-provider"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -41,6 +42,8 @@ export namespace Provider {
     "@openrouter/ai-sdk-provider": createOpenRouter,
     // @ts-ignore (TODO: kill this code so we dont have to maintain it)
     "@ai-sdk/github-copilot": createGitHubCopilotOpenAICompatible,
+    // Claude Code provider - routes through official binary for subscription auth
+    "claude-code": createClaudeCodeProvider as any,
   }
 
   type CustomModelLoader = (sdk: any, modelID: string, options?: Record<string, any>) => Promise<any>
@@ -316,6 +319,22 @@ export namespace Provider {
             "X-Title": "opencode",
           },
         },
+      }
+    },
+    "claude-code": async () => {
+      // Check if claude binary is available
+      const { execSync } = await import("child_process")
+      try {
+        execSync("which claude", { stdio: "pipe" })
+        return {
+          autoload: true,
+          async getModel(sdk: any, modelID: string) {
+            return sdk(modelID)
+          },
+          options: {},
+        }
+      } catch {
+        return { autoload: false }
       }
     },
   }
@@ -929,7 +948,7 @@ export namespace Provider {
     return undefined
   }
 
-  const priority = ["gpt-5", "claude-sonnet-4", "big-pickle", "gemini-3-pro"]
+  const priority = ["claude-opus-4-5", "claude-opus-4-1", "claude-sonnet-4", "claude-3-5-sonnet", "gpt-5", "big-pickle", "gemini-3-pro"]
   export function sort(models: Model[]) {
     return sortBy(
       models,
