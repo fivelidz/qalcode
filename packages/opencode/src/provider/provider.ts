@@ -531,6 +531,23 @@ export namespace Provider {
       }
     }
 
+    // Add Claude Code provider - routes through official Claude Code binary
+    // This allows using Claude subscription auth instead of API key
+    if (database["anthropic"]) {
+      const anthropic = database["anthropic"]
+      database["claude-code"] = {
+        ...anthropic,
+        id: "claude-code",
+        name: "Claude Code (Subscription)",
+        api: { id: "claude-code", url: "", npm: "claude-code" },
+        env: [],
+        models: mapValues(anthropic.models, (model) => ({
+          ...model,
+          providerID: "claude-code",
+        })),
+      }
+    }
+
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
       if (existing) {
