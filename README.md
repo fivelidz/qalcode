@@ -31,7 +31,16 @@ choco install opencode             # Windows
 brew install opencode              # macOS and Linux
 paru -S opencode-bin               # Arch Linux
 mise use --pin -g ubi:sst/opencode # Any OS
-nix run nixpkgs#opencode           # or github:sst/opencode for latest dev branch
+
+# NixOS (see NIXOS-SETUP.md for details)
+nix build && ln -s result/bin/opencode ~/bin/qalcode
+```
+
+### Claude Configuration
+
+To use Claude Opus 4.1 (same as Claude Code):
+```bash
+export ANTHROPIC_API_KEY="your-api-key"
 ```
 
 > [!TIP]

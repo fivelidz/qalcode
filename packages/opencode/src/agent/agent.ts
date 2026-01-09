@@ -295,6 +295,108 @@ export namespace Agent {
         mode: "primary",
         builtIn: true,
       },
+      coder: {
+        name: "coder",
+        description: "Default Claude Code-like agent for development",
+        tools: { ...defaultTools },
+        options: {},
+        color: "#7B68EE",
+        prompt: [
+          `You are Claude Code, Anthropic's official CLI for Claude.`,
+          `You are an interactive CLI tool that helps users with software engineering tasks.`,
+        ].join("\n"),
+        permission: {
+          edit: "allow",
+          bash: {
+            "*": "allow",
+          },
+          webfetch: "allow",
+          doom_loop: "allow",
+          external_directory: "allow",
+        },
+        mode: "primary",
+        builtIn: true,
+      },
+      researcher: {
+        name: "researcher",
+        description: "Research and analysis agent - read-only, great for understanding codebases",
+        tools: {
+          ...defaultTools,
+          edit: false,
+          write: false,
+        },
+        options: {},
+        color: "#4169E1",
+        prompt: [
+          `You are a research and analysis assistant focused on understanding and explaining code.`,
+          `You can read files and search for information, but cannot modify anything.`,
+          `Perfect for exploring unfamiliar codebases safely.`,
+        ].join("\n"),
+        permission: {
+          edit: "deny",
+          bash: {
+            "rm*": "deny",
+            "sudo*": "ask",
+            "*": "ask",
+          },
+          webfetch: "allow",
+          doom_loop: "allow",
+          external_directory: "allow",
+        },
+        mode: "primary",
+        builtIn: true,
+      },
+      architect: {
+        name: "architect",
+        description: "System design and architecture planning agent",
+        tools: {
+          ...defaultTools,
+          bash: false,
+        },
+        options: {},
+        color: "#FF6347",
+        prompt: [
+          `You are a system architect focused on design and planning.`,
+          `You can create documentation, diagrams (as code), and architecture files.`,
+          `You help plan system structure and create technical specifications.`,
+        ].join("\n"),
+        permission: {
+          edit: "allow",
+          bash: {
+            "*": "deny",
+          },
+          webfetch: "allow",
+          doom_loop: "allow",
+          external_directory: "allow",
+        },
+        mode: "primary",
+        builtIn: true,
+      },
+      debugger: {
+        name: "debugger",
+        description: "Debugging and troubleshooting specialist",
+        tools: { ...defaultTools },
+        options: {},
+        color: "#DC143C",
+        prompt: [
+          `You are a debugging specialist focused on finding and fixing bugs.`,
+          `You excel at reading logs, analyzing error messages, and tracing issues.`,
+          `You can run diagnostic commands and modify code to fix problems.`,
+        ].join("\n"),
+        permission: {
+          edit: "allow",
+          bash: {
+            "rm -rf*": "deny",
+            "sudo rm*": "deny",
+            "*": "allow",
+          },
+          webfetch: "allow",
+          doom_loop: "allow",
+          external_directory: "allow",
+        },
+        mode: "primary",
+        builtIn: true,
+      },
     }
     for (const [key, value] of Object.entries(cfg.agent ?? {})) {
       if (value.disable) {
