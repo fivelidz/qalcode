@@ -76,15 +76,30 @@ function formatMessagesForClaude(prompt: any[]): string {
   return parts.join("\n\n")
 }
 
+// Permission mode mapping from qalcode agents to Claude Code
+const PERMISSION_MODE_MAP: Record<string, string> = {
+  "yolo": "bypassPermissions",
+  "yolo-extreme": "bypassPermissions",
+  "coder": "acceptEdits",
+  "build": "acceptEdits",
+  "debugger": "acceptEdits",
+  "plan": "plan",
+  "researcher": "plan",
+  "architect": "plan",
+}
+
 export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = "v2"
   readonly provider = "claude-code"
   readonly modelId: string
+  private permissionMode: string
 
   readonly supportedUrls: Record<string, RegExp[]> = {}
 
-  constructor(modelId: string = "claude-opus-4-5-20251101") {
+  // Default to acceptEdits for smoother experience (prompts for destructive actions only)
+  constructor(modelId: string = "claude-opus-4-5-20251101", permissionMode: string = "acceptEdits") {
     this.modelId = modelId
+    this.permissionMode = permissionMode
   }
 
   async doGenerate(
@@ -96,7 +111,8 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       const claude = spawn("claude", [
         "--print",
         "--output-format", "json",
-        "--model", this.modelId
+        "--model", this.modelId,
+        "--permission-mode", this.permissionMode
       ], {
         stdio: ["pipe", "pipe", "pipe"],
         env: { ...process.env, ANTHROPIC_API_KEY: undefined },
@@ -165,7 +181,8 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       "--output-format", "stream-json",
       "--verbose",
       "--include-partial-messages",
-      "--model", this.modelId
+      "--model", this.modelId,
+      "--permission-mode", this.permissionMode
     ], {
       stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env, ANTHROPIC_API_KEY: undefined },
@@ -281,10 +298,12 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   }
 }
 
-// Provider factory
-export function createClaudeCodeProvider() {
-  const createModel = (modelId: string = "claude-opus-4-5-20251101") => {
-    return new ClaudeCodeLanguageModel(modelId)
+// Provider factory with permission mode support
+export function createClaudeCodeProvider(options?: { permissionMode?: string }) {
+  const defaultPermissionMode = options?.permissionMode || "default"
+
+  const createModel = (modelId: string = "claude-opus-4-5-20251101", permissionMode?: string) => {
+    return new ClaudeCodeLanguageModel(modelId, permissionMode || defaultPermissionMode)
   }
 
   const provider = function (modelId?: string) {
@@ -293,6 +312,9 @@ export function createClaudeCodeProvider() {
 
   provider.languageModel = createModel
   provider.chat = createModel
+
+  // Allow getting permission mode from PERMISSION_MODE_MAP
+  provider.getPermissionMode = (agentName: string) => PERMISSION_MODE_MAP[agentName] || "default"
 
   return provider
 }
