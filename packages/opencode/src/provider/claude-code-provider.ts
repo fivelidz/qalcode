@@ -1,18 +1,12 @@
 // Claude Code Provider - Routes through the official Claude Code binary
 // This allows qalcode to use Claude subscription authentication
 
-import { spawn, type ChildProcess } from "child_process"
-import { createInterface } from "readline"
+import { spawn } from "child_process"
 import type {
   LanguageModelV1,
   LanguageModelV1CallOptions,
   LanguageModelV1StreamPart,
 } from "@ai-sdk/provider"
-
-interface ClaudeCodeMessage {
-  role: "user" | "assistant" | "system"
-  content: string
-}
 
 function extractTextContent(content: any): string {
   if (typeof content === "string") return content
@@ -117,97 +111,25 @@ export class ClaudeCodeLanguageModel implements LanguageModelV1 {
     stream: ReadableStream<LanguageModelV1StreamPart>
     rawCall: { rawPrompt: unknown; rawSettings: Record<string, unknown> }
   }> {
+    // Simplest approach: call doGenerate and emit result as a single stream chunk
+    // This avoids streaming complexity while maintaining API compatibility
     const prompt = formatMessagesForClaude(options.prompt)
-
-    const claude = spawn(
-      "claude",
-      ["--print", "--output-format", "stream-json", "--verbose"],
-      {
-        stdio: ["pipe", "pipe", "pipe"],
-        env: { ...process.env, ANTHROPIC_API_KEY: undefined },
-      }
-    )
-
-    claude.stdin.write(prompt)
-    claude.stdin.end()
-
-    const rl = createInterface({ input: claude.stdout })
-
-    let totalText = ""
+    const result = await this.doGenerate(options)
 
     const stream = new ReadableStream<LanguageModelV1StreamPart>({
       start(controller) {
-        rl.on("line", (line: string) => {
-          if (!line.trim()) return
-
-          try {
-            const event = JSON.parse(line)
-
-            // Handle stream events from Claude Code
-            if (event.type === "stream_event") {
-              const innerEvent = event.event
-
-              if (innerEvent.type === "content_block_delta") {
-                const text = innerEvent.delta?.text
-                if (text) {
-                  totalText += text
-                  controller.enqueue({
-                    type: "text-delta",
-                    textDelta: text,
-                  })
-                }
-              } else if (innerEvent.type === "message_stop") {
-                controller.enqueue({
-                  type: "finish",
-                  finishReason: "stop",
-                  usage: {
-                    promptTokens: Math.ceil(prompt.length / 4),
-                    completionTokens: Math.ceil(totalText.length / 4),
-                  },
-                })
-              }
-            } else if (event.type === "assistant" && event.message?.content) {
-              // Full message event - extract any new text
-              for (const block of event.message.content) {
-                if (block.type === "text" && block.text) {
-                  const newText = block.text.slice(totalText.length)
-                  if (newText) {
-                    totalText = block.text
-                    controller.enqueue({
-                      type: "text-delta",
-                      textDelta: newText,
-                    })
-                  }
-                }
-              }
-            } else if (event.type === "result") {
-              // Final result
-              controller.enqueue({
-                type: "finish",
-                finishReason: "stop",
-                usage: {
-                  promptTokens: event.usage?.input_tokens || 0,
-                  completionTokens: event.usage?.output_tokens || 0,
-                },
-              })
-              controller.close()
-            }
-          } catch (e) {
-            // Not JSON, ignore
-          }
+        // Emit text as single delta
+        controller.enqueue({
+          type: "text-delta",
+          textDelta: result.text,
         })
-
-        claude.on("close", (code: number) => {
-          if (code !== 0) {
-            controller.error(new Error(`Claude Code exited with code ${code}`))
-          } else {
-            controller.close()
-          }
+        // Emit finish
+        controller.enqueue({
+          type: "finish",
+          finishReason: result.finishReason,
+          usage: result.usage,
         })
-
-        claude.on("error", (err: Error) => {
-          controller.error(err)
-        })
+        controller.close()
       },
     })
 
