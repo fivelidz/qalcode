@@ -96,8 +96,8 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
 
   readonly supportedUrls: Record<string, RegExp[]> = {}
 
-  // Default to acceptEdits for smoother experience (prompts for destructive actions only)
-  constructor(modelId: string = "claude-opus-4-5-20251101", permissionMode: string = "acceptEdits") {
+  // Default to 'default' permission mode - safest option, respects settings.local.json deny list
+  constructor(modelId: string = "claude-opus-4-5-20251101", permissionMode: string = "default") {
     this.modelId = modelId
     this.permissionMode = permissionMode
   }
