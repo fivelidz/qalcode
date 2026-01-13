@@ -160,8 +160,13 @@ export namespace Installation {
       })
   }
 
-  export const VERSION = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "local"
-  export const CHANNEL = typeof OPENCODE_CHANNEL === "string" ? OPENCODE_CHANNEL : "local"
+  // Hardcoded to match official opencode for Anthropic OAuth compatibility
+  export const VERSION = typeof OPENCODE_VERSION === "string"
+    ? OPENCODE_VERSION
+    : (process.env.OPENCODE_VERSION || "1.1.15")
+  export const CHANNEL = typeof OPENCODE_CHANNEL === "string"
+    ? OPENCODE_CHANNEL
+    : (process.env.OPENCODE_CHANNEL || "latest")
   export const USER_AGENT = `opencode/${CHANNEL}/${VERSION}`
 
   export async function latest(installMethod?: Method) {
