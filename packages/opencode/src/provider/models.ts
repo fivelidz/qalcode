@@ -77,8 +77,25 @@ export namespace ModelsDev {
     const file = Bun.file(filepath)
     const result = await file.json().catch(() => {})
     if (result) return result as Record<string, Provider>
-    const json = await data()
-    return JSON.parse(json) as Record<string, Provider>
+    // Fallback: fetch directly if macro data not available (running from source)
+    try {
+      const json = await data()
+      return JSON.parse(json) as Record<string, Provider>
+    } catch {
+      // Fetch directly when running from source
+      const response = await fetch("https://models.dev/api.json", {
+        headers: {
+          "User-Agent": Installation.USER_AGENT,
+        },
+        signal: AbortSignal.timeout(10 * 1000),
+      })
+      if (response.ok) {
+        const json = await response.text()
+        await Bun.write(file, json)
+        return JSON.parse(json) as Record<string, Provider>
+      }
+      return {} as Record<string, Provider>
+    }
   }
 
   export async function refresh() {
