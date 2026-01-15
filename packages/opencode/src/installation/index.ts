@@ -163,7 +163,7 @@ export namespace Installation {
   // Hardcoded to match official opencode for Anthropic OAuth compatibility
   export const VERSION = typeof OPENCODE_VERSION === "string"
     ? OPENCODE_VERSION
-    : (process.env.OPENCODE_VERSION || "1.1.15")
+    : (process.env.OPENCODE_VERSION || "1.1.21")
   export const CHANNEL = typeof OPENCODE_CHANNEL === "string"
     ? OPENCODE_CHANNEL
     : (process.env.OPENCODE_CHANNEL || "latest")
