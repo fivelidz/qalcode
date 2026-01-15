@@ -36,9 +36,12 @@ bun install
 Create `~/.local/bin/qalcode`:
 
 ```bash
-#!/usr/bin/env bash
+#!/bin/bash
 # QalCode - Custom OpenCode fork with qalarc branding
-# User-Agent hardcoded to opencode/latest/1.1.15 for Anthropic OAuth compatibility
+# Runs from source using system Bun (works on non-AVX CPUs)
+
+QALCODE_SRC="$HOME/qalcode/packages/opencode"
+WORKING_DIR="$(pwd)"
 
 # Handle special commands
 case "$1" in
@@ -61,18 +64,30 @@ case "$1" in
     echo "Special commands:"
     echo "  --clean-auth    Remove cached Anthropic OAuth credentials"
     echo "  --help, -h      Show this help message"
+    echo "  --version       Show version"
     echo ""
     echo "All other arguments are passed to opencode."
     echo ""
-    cd ~/qalcode
-    exec bun run --cwd packages/opencode --conditions=browser src/index.ts --help
+    exec bun run --cwd "$QALCODE_SRC" --conditions=browser src/index.ts --help
+    ;;
+  --version)
+    exec bun run --cwd "$QALCODE_SRC" --conditions=browser src/index.ts --version
+    ;;
+  run)
+    # Run command - pass working dir then run args
+    shift
+    export PWD="$WORKING_DIR"
+    exec bun run --cwd "$QALCODE_SRC" --conditions=browser src/index.ts "$WORKING_DIR" run "$@"
     ;;
   *)
-    cd ~/qalcode
-    exec bun run --cwd packages/opencode --conditions=browser src/index.ts "$@"
+    # Default TUI mode - pass working dir as project
+    export PWD="$WORKING_DIR"
+    exec bun run --cwd "$QALCODE_SRC" --conditions=browser src/index.ts "$WORKING_DIR" "$@"
     ;;
 esac
 ```
+
+**Note:** Bun may print `Shell cwd was reset to ...` when exiting - this is cosmetic and doesn't affect functionality.
 
 Make it executable and create symlink:
 
