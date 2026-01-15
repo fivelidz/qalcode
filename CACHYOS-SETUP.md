@@ -5,9 +5,15 @@ Custom OpenCode fork with qalarc branding, optimized for CachyOS.
 ## Requirements
 
 - **OS**: CachyOS (Arch-based) or any Linux distribution
-- **Bun**: v1.3.5 or later
+- **Bun**: v1.3.5 or later (baseline build, no AVX required)
 - **Node.js**: v18+ (optional, Bun is preferred)
 - **Claude Code Max subscription**: Required for Anthropic OAuth authentication
+
+## Why QalCode over OpenCode?
+
+OpenCode 1.1.21+ bundles a Bun binary that requires **AVX CPU instructions**. CPUs without AVX (like Intel Celeron J4125) will crash with "Illegal instruction".
+
+QalCode runs from source using your **system Bun** (baseline build), which works on all x86_64 CPUs regardless of AVX support.
 
 ## Installation
 
@@ -104,7 +110,7 @@ Hardcoded version and channel to match official OpenCode for OAuth validation:
 // Hardcoded to match official opencode for Anthropic OAuth compatibility
 export const VERSION = typeof OPENCODE_VERSION === "string"
   ? OPENCODE_VERSION
-  : (process.env.OPENCODE_VERSION || "1.1.15")
+  : (process.env.OPENCODE_VERSION || "1.1.21")
 export const CHANNEL = typeof OPENCODE_CHANNEL === "string"
   ? OPENCODE_CHANNEL
   : (process.env.OPENCODE_CHANNEL || "latest")
