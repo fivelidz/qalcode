@@ -484,21 +484,36 @@ function formatToolSummary(part: Part): string {
 // Export helper for creating controlled state
 export function createSubagentPanelState() {
   const [minimized, setMinimized] = createSignal(false)
-  const [activeTabIndex, setActiveTabIndex] = createSignal(0)
-  
+  // Start at -1 (no selection) - sidebar shows main session info by default
+  const [activeTabIndex, setActiveTabIndex] = createSignal(-1)
+
   return {
     minimized,
     setMinimized,
     activeTabIndex,
     setActiveTabIndex,
     toggle: () => setMinimized(prev => !prev),
+    // Clear selection - sidebar returns to showing main session info
+    clearSelection: () => setActiveTabIndex(-1),
     nextTab: (tabCount: number) => {
       if (tabCount === 0) return
-      setActiveTabIndex(prev => (prev + 1) % tabCount)
+      const current = activeTabIndex()
+      // If no selection, start at 0
+      if (current < 0) {
+        setActiveTabIndex(0)
+      } else {
+        setActiveTabIndex((current + 1) % tabCount)
+      }
     },
     prevTab: (tabCount: number) => {
       if (tabCount === 0) return
-      setActiveTabIndex(prev => (prev - 1 + tabCount) % tabCount)
+      const current = activeTabIndex()
+      // If no selection, start at last
+      if (current < 0) {
+        setActiveTabIndex(tabCount - 1)
+      } else {
+        setActiveTabIndex((current - 1 + tabCount) % tabCount)
+      }
     },
   }
 }

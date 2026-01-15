@@ -867,9 +867,10 @@ const PROCESSING_FRAMES = [
   "[□□□□■] processing",
 ]
 
-export function Sidebar(props: { 
+export function Sidebar(props: {
   sessionID: string
   activeSubagentSessionID?: string  // Optional: show this subagent's data instead (for parent view)
+  onReturnToMain?: () => void  // Callback to clear subagent selection and return to main session info
 }) {
   const sync = useSync()
   const { theme } = useTheme()
@@ -1147,7 +1148,7 @@ export function Sidebar(props: {
 
             {/* Active Subagent Banner - shown when viewing a subagent */}
             <Show when={isShowingSubagent() && subagentInfo()}>
-              <box 
+              <box
                 backgroundColor={theme.backgroundElement}
                 paddingLeft={1}
                 paddingRight={1}
@@ -1165,6 +1166,17 @@ export function Sidebar(props: {
                 <text fg={theme.textMuted}>
                   {status().type === "busy" ? "Working..." : status().type === "retry" ? "Retrying..." : "Completed"}
                 </text>
+                {/* Return to Main button - only when viewing from parent via subagent panel */}
+                <Show when={props.activeSubagentSessionID && props.onReturnToMain}>
+                  <box
+                    onMouseDown={() => props.onReturnToMain?.()}
+                    paddingTop={1}
+                  >
+                    <text fg={theme.primary}>
+                      <b>[ ◆ Return to Main ]</b>
+                    </text>
+                  </box>
+                </Show>
               </box>
             </Show>
 

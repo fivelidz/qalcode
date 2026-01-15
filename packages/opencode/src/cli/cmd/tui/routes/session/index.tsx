@@ -123,7 +123,7 @@ export function Session() {
   const [showTimestamps, setShowTimestamps] = createSignal(kv.get("timestamps", "hide") === "show")
   const [usernameVisible, setUsernameVisible] = createSignal(kv.get("username_visible", true))
   const [showDetails, setShowDetails] = createSignal(kv.get("tool_details_visibility", true))
-  const [showScrollbar, setShowScrollbar] = createSignal(kv.get("scrollbar_visible", false))
+  const [showScrollbar, setShowScrollbar] = createSignal(kv.get("scrollbar_visible", true))
   const [diffWrapMode, setDiffWrapMode] = createSignal<"word" | "none">("word")
   const [subagentPanelVisible, setSubagentPanelVisible] = createSignal(kv.get("subagent_panel_visible", true))
   
@@ -164,14 +164,18 @@ export function Session() {
   })
   
   // Get the active subagent session ID based on panel tab selection
+  // Returns undefined when no subagent is selected (-1) so sidebar shows main session info
   const activeSubagentSessionID = createMemo(() => {
     if (!hasSubagents() || !subagentPanelVisible()) return undefined
     const children = childSessions()
     const activeIndex = subagentPanelState.activeTabIndex()
-    if (activeIndex >= 0 && activeIndex < children.length) {
+    // -1 means no selection - show main session info in sidebar
+    if (activeIndex < 0) return undefined
+    if (activeIndex < children.length) {
       return children[activeIndex].id
     }
-    return children[0]?.id
+    // Index out of bounds, return undefined (show main session)
+    return undefined
   })
 
   const wide = createMemo(() => dimensions().width > 120)
@@ -1012,7 +1016,7 @@ export function Session() {
         <box flexGrow={1} paddingBottom={1} paddingTop={1} paddingLeft={2} paddingRight={2} gap={1}>
           <Show when={session()}>
             {/* Session Tabs - shows for parent and subagent sessions */}
-            <SessionTabs 
+            <SessionTabs
               currentSessionID={route.sessionID}
               onNavigateToSession={(sessionID) => navigate({ type: "session", sessionID })}
               splitSessionIDs={splitPanelState.splitSessionIDs}
@@ -1200,9 +1204,10 @@ export function Session() {
           <Toast />
         </box>
         <Show when={sidebarVisible()}>
-          <Sidebar 
-            sessionID={hasSplits() ? focusedSessionID() : route.sessionID} 
+          <Sidebar
+            sessionID={hasSplits() ? focusedSessionID() : route.sessionID}
             activeSubagentSessionID={hasSplits() ? undefined : activeSubagentSessionID()}
+            onReturnToMain={() => subagentPanelState.clearSelection()}
           />
         </Show>
       </box>
