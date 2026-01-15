@@ -176,15 +176,39 @@ export async function get() {
 | `~/.local/share/opencode/log/` | Log files |
 | `~/.cache/opencode/` | Cached plugins and models |
 
+## Anthropic OAuth Requirements (Critical)
+
+Anthropic's OAuth validates **multiple factors**:
+
+1. **User-Agent**: Must match `opencode/latest/X.Y.Z` (e.g., `opencode/latest/1.1.21`)
+2. **Beta Headers**: Must include `claude-code-20250219` in `anthropic-beta` header
+3. **System Prompt**: Must contain exact string "You are Claude Code, Anthropic's official CLI for Claude."
+
+**DO NOT MODIFY** the file `packages/opencode/src/session/prompt/anthropic_spoof.txt` - it contains the required identity string that Anthropic validates.
+
+### Customization Limitations
+
+You can customize:
+- Agent descriptions and permissions
+- Other prompt files (`anthropic.txt`, etc.)
+- Configuration options
+- TUI appearance
+
+You **cannot** customize:
+- The "Claude Code" identity in `anthropic_spoof.txt`
+- The User-Agent format
+- The beta header flags
+
 ## Troubleshooting
 
 ### "This credential is only authorized for use with Claude Code"
 
-This error means the User-Agent validation failed. Ensure:
+This error means OAuth validation failed. Check these in order:
 
-1. The `installation/index.ts` changes are applied (version = "1.1.15", channel = "latest")
-2. You're running the latest code from `cachyos-working` branch
-3. Try cleaning credentials: `qalcode --clean-auth`
+1. **Version**: `qalcode --version` should show `1.1.21` (or current opencode version)
+2. **Prompt file**: Ensure `anthropic_spoof.txt` starts with "You are Claude Code, Anthropic's official CLI for Claude."
+3. **Plugin versions**: Check `opencode-anthropic-auth@0.0.9` in `plugin/index.ts`
+4. **Clear cache**: `rm -rf ~/.cache/opencode/node_modules && qalcode --clean-auth`
 
 ### "ReferenceError: data is not defined"
 
@@ -214,5 +238,5 @@ bun install
 
 ---
 
-*Last updated: 2026-01-13*
+*Last updated: 2026-01-15*
 *Maintained by: qalarc*
