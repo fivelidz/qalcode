@@ -1,3 +1,39 @@
+# QalCode
+
+**Custom OpenCode fork optimized for CachyOS and non-AVX CPUs.**
+
+## QalCode Documentation
+
+| Document | Description |
+|----------|-------------|
+| [CACHYOS-SETUP.md](CACHYOS-SETUP.md) | Installation and setup guide |
+| [MAINTENANCE.md](MAINTENANCE.md) | How OAuth works, what can/can't be changed |
+| [UPDATE.md](UPDATE.md) | How to update when OpenCode releases new versions |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Fix common issues |
+
+## Why QalCode?
+
+- **Works on non-AVX CPUs** (Intel Celeron, older processors)
+- **Uses system Bun** instead of bundled binary
+- **Claude Code OAuth compatible** with subscription accounts
+- **Pre-configured for Claude Opus 4.5**
+
+## Quick Start
+
+```bash
+# Clone and setup
+git clone https://github.com/fivelidz/qalcode.git ~/qalcode
+cd ~/qalcode && bun install
+
+# Create wrapper (see CACHYOS-SETUP.md for full script)
+# Then run:
+qalcode
+```
+
+---
+
+## Original OpenCode README
+
 <p align="center">
   <a href="https://opencode.ai">
     <picture>
